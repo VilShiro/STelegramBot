@@ -120,13 +120,7 @@ public class Rule34SearcherBot extends Bot {
                     }
                 }
                 catch (HttpStatusException e){
-                    Elements flexi = Jsoup.connect(url).get().getElementsByClass("flexi");
-                    Elements img = Jsoup.parse(flexi.html()).getElementsByTag("img");
-                    if (!img.attr("src").isEmpty()) {
-                        photosArray.add(buildInlinePhoto("photo" + i, img.attr("src")));
-                        LOGGER.trace("Img src attr: {}", img.attr("src"));
-                        i++;
-                    }
+                    LOGGER.error(e.getMessage());
                 }
             }
 
