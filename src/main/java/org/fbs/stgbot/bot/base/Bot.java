@@ -17,6 +17,8 @@ public abstract class Bot{
 
     private final GetUpdates getUpdates = new GetUpdates().offset(0).timeout(0);
 
+    private final TelegramBot bot;
+
     protected Bot(String botToken, String startCommandRaw){
         StringBuilder stringBuilder = new StringBuilder();
         String startCommand = "";
@@ -28,7 +30,7 @@ public abstract class Bot{
         }
         startCommand = startCommandRaw;
 
-        TelegramBot bot = new TelegramBot(botToken);
+        bot = new TelegramBot(botToken);
         String finalStartCommand = startCommand;
         bot.setUpdatesListener(new UpdatesListener() {
             @Override
@@ -85,6 +87,10 @@ public abstract class Bot{
             }
         }
         );
+    }
+
+    protected TelegramBot getBot(){
+        return bot;
     }
 
     protected abstract void onStartCommand(Message message);
