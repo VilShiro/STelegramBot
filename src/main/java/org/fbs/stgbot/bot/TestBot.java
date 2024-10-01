@@ -1,8 +1,8 @@
 package org.fbs.stgbot.bot;
 
 import com.pengrad.telegrambot.model.*;
-import com.pengrad.telegrambot.model.request.InlineQueryResult;
-import com.pengrad.telegrambot.model.request.InlineQueryResultArticle;
+import com.pengrad.telegrambot.model.request.*;
+import com.pengrad.telegrambot.request.AnswerInlineQuery;
 import com.pengrad.telegrambot.request.BaseRequest;
 import org.fbs.stgbot.bot.base.Bot;
 
@@ -44,15 +44,8 @@ public final class TestBot extends Bot {
 
     @Override
     protected void inlineQueryParse(InlineQuery query) {
-    String queryS = query.query().trim().toLowerCase();
-    List<String> answerList = new LinkedList<String>();
-    answerList.add("first_answer");
-    answerList.add("second_answer");
-    InlineQueryResult[] resArray = new InlineQueryResult[answerList.size()];
-    for (int j = 0; j < resArray.length; j++) {
-        resArray[j] = new InlineQueryResultArticle(query.id(), answerList.get(j), queryS);
+
     }
 
-    // TODO: BaseRequest request =  new  .answerInlineQuery(query.id(), resArray);
-    }
+
 }
