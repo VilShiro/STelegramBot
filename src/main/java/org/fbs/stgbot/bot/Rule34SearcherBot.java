@@ -136,13 +136,6 @@ public class Rule34SearcherBot extends Bot {
                 LOGGER.error(e);
             }
         }
-        else {
-            try {
-                bot.execute(new AnswerInlineQuery(query.id(), buildInlineArticle("0", "Tag not found", "Tag does not found")));
-            }catch (RuntimeException e){
-                LOGGER.error(e);
-            }
-        }
     }
 
 }
