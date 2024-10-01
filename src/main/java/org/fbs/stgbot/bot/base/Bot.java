@@ -7,7 +7,7 @@ import com.pengrad.telegrambot.request.GetUpdates;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.List;
+import java.io.IOException;
 import java.util.Objects;
 
 
@@ -32,50 +32,52 @@ public abstract class Bot{
 
         bot = new TelegramBot(botToken);
         String finalStartCommand = startCommand;
-        bot.setUpdatesListener(new UpdatesListener() {
-            @Override
-            public int process(List<Update> list) {
+        bot.setUpdatesListener(list -> {
 
-                Update lastUpdate = list.get(list.size()-1);
-                LOGGER.trace("New update was found: {}", lastUpdate);
-                updateParse(lastUpdate);
+            Update lastUpdate = list.get(list.size()-1);
+            LOGGER.trace("New update was found: {}", lastUpdate);
+            updateParse(lastUpdate);
 
-                if (lastUpdate.message() != null && !Objects.equals(lastUpdate.message().text(), "")){
-                    Message message = lastUpdate.message();
-                    LOGGER.trace("Message was found: {}", message);
-                    messageParse(message);
-                    try {
-                        if (message.entities().length > 0) {
-                            MessageEntity[] entities = message.entities();
-                            LOGGER.trace("Message has entities, parser was called");
-                            entitiesParse(entities);
-                            if (message.text().contains(finalStartCommand)) {
-                                LOGGER.trace("Message: {}", message.text());
-                                onStartCommand(message);
-                                LOGGER.trace("Start command : {} was called", finalStartCommand);
-                            }
+            if (lastUpdate.message() != null && !Objects.equals(lastUpdate.message().text(), "")){
+                Message message = lastUpdate.message();
+                LOGGER.trace("Message was found: {}", message);
+                messageParse(message);
+                try {
+                    if (message.entities().length > 0) {
+                        MessageEntity[] entities = message.entities();
+                        LOGGER.trace("Message has entities, parser was called");
+                        entitiesParse(entities);
+                        if (message.text().contains(finalStartCommand)) {
+                            LOGGER.trace("Message: {}", message.text());
+                            onStartCommand(message);
+                            LOGGER.trace("Start command : {} was called", finalStartCommand);
                         }
                     }
-                    catch (NullPointerException e){
-                        LOGGER.error(e.getMessage());
-                    }
                 }
-                else if (lastUpdate.callbackQuery() != null){
-                    CallbackQuery query = lastUpdate.callbackQuery();
-                    LOGGER.trace("Callback query was found: {}", query);
-                    callbackQueryParse(query);
+                catch (NullPointerException e){
+                    LOGGER.error(e.getMessage());
                 }
-                else if (lastUpdate.inlineQuery() != null) {
-                    InlineQuery query = lastUpdate.inlineQuery();
-                    LOGGER.trace("Inline query was found: {}", query);
-                    inlineQueryParse(query);
-                }
-                else {
-                    LOGGER.error("Unknown update: {}", lastUpdate);
-                }
-
-                return UpdatesListener.CONFIRMED_UPDATES_ALL;
             }
+            else if (lastUpdate.callbackQuery() != null){
+                CallbackQuery query = lastUpdate.callbackQuery();
+                LOGGER.trace("Callback query was found: {}", query);
+                callbackQueryParse(query);
+            }
+            else if (lastUpdate.inlineQuery() != null) {
+                InlineQuery query = lastUpdate.inlineQuery();
+                LOGGER.trace("Inline query was found: {}", query);
+                try {
+                    inlineQueryParse(query);
+                } catch (IOException e) {
+                    LOGGER.error(e.getMessage());
+                }
+            }
+            else {
+                LOGGER.error("Unknown update: {}", lastUpdate);
+            }
+
+            return UpdatesListener.CONFIRMED_UPDATES_ALL;
+
         }, e -> {
             if (e.response() != null) {
                 // got bad response from telegram
@@ -103,6 +105,6 @@ public abstract class Bot{
 
     protected abstract void messageParse(Message message);
 
-    protected abstract void inlineQueryParse(InlineQuery query);
+    protected abstract void inlineQueryParse(InlineQuery query) throws IOException;
 
 }
