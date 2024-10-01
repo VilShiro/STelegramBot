@@ -16,9 +16,9 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.telegram</groupId>
-            <artifactId>telegrambots</artifactId>
-            <version>6.9.0</version>
+            <groupId>com.github.pengrad</groupId>
+            <artifactId>java-telegram-bot-api</artifactId>
+            <version>7.9.1</version>
         </dependency>
 
         <dependency>

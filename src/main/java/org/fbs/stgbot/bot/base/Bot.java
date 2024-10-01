@@ -1,103 +1,102 @@
 package org.fbs.stgbot.bot.base;
 
-import org.telegram.telegrambots.bots.TelegramLongPollingBot;
-import org.telegram.telegrambots.meta.TelegramBotsApi;
-import org.telegram.telegrambots.meta.api.objects.Message;
-import org.telegram.telegrambots.meta.api.objects.Update;
-import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
-import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
+import com.pengrad.telegrambot.TelegramBot;
+import com.pengrad.telegrambot.UpdatesListener;
+import com.pengrad.telegrambot.model.*;
+import com.pengrad.telegrambot.request.GetUpdates;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-import static org.fbs.stgbot.Main.LOGGER;
+import java.util.List;
+import java.util.Objects;
 
-public abstract class Bot extends TelegramLongPollingBot {
 
-    protected Bot(String botToken) throws TelegramApiException {
-        super(botToken);
-        TelegramBotsApi botsApi = new TelegramBotsApi(DefaultBotSession.class);
-        botsApi.registerBot(this);
-    }
+public abstract class Bot{
 
-    public Class<DefaultBotSession> getBotSession() {
-        return DefaultBotSession.class;
-    }
+    public static final Logger LOGGER = LogManager.getLogger(Bot.class);
 
-    @Override
-    public void onUpdateReceived(Update update) {
-        Update updateC = update;
-        LOGGER.trace("Received update: {}", updateC);
+    private final GetUpdates getUpdates = new GetUpdates().offset(0).timeout(0);
 
-        // Start command variant
-        try {
-            updateParse(updateC);
-        } catch (TelegramApiException e) {
-            throw new RuntimeException(e);
-        }
-
-        if (updateC!= null) {
-            // CallbackQuery variant
-            if (updateC.hasCallbackQuery()) {
-                try {
-                    callbackQueryParse(updateC);
-                } catch (TelegramApiException e) {
-                    throw new RuntimeException(e);
-                }
+    protected Bot(String botToken, String startCommandRaw){
+        StringBuilder stringBuilder = new StringBuilder();
+        String startCommand = "";
+        if (startCommandRaw.toCharArray()[0] == '/'){
+            for (int i = 1; i < startCommandRaw.length(); i++) {
+                stringBuilder.append(startCommandRaw.toCharArray()[i]);
             }
-            // Message variant
-            else if (updateC.hasMessage()) {
-                try{
-                messageParse(updateC);
-                } catch (TelegramApiException e0) {
-                    throw new RuntimeException(e0);
-                }
-                Message message = updateC.getMessage();
-                if (message.isCommand()){
-                    LOGGER.info("Received command: {}", message.getText());
-                    switch (message.getText()) {
-                        case "/start":
-                            try {
+            startCommand = stringBuilder.toString();
+        }
+        startCommand = startCommandRaw;
+
+        TelegramBot bot = new TelegramBot(botToken);
+        String finalStartCommand = startCommand;
+        bot.setUpdatesListener(new UpdatesListener() {
+            @Override
+            public int process(List<Update> list) {
+
+                Update lastUpdate = list.get(list.size()-1);
+                LOGGER.trace("New update was found: {}", lastUpdate);
+                updateParse(lastUpdate);
+
+                if (lastUpdate.message() != null && !Objects.equals(lastUpdate.message().text(), "")){
+                    Message message = lastUpdate.message();
+                    LOGGER.trace("Message was found: {}", message);
+                    messageParse(message);
+                    try {
+                        if (message.entities().length > 0) {
+                            MessageEntity[] entities = message.entities();
+                            LOGGER.trace("Message has entities, parser was called");
+                            entitiesParse(entities);
+                            if (message.text().contains(finalStartCommand)) {
+                                LOGGER.trace("Message: {}", message.text());
                                 onStartCommand(message);
-                            } catch (TelegramApiException e) {
-                                throw new RuntimeException(e);
+                                LOGGER.trace("Start command : {} was called", finalStartCommand);
                             }
-                            break;
-                        case "stop":
-                            LOGGER.info("Received stop command");
-                            System.exit(0);
-                        default:
-                            LOGGER.info("Unknown command: {}", message.getText());
+                        }
+                    }
+                    catch (NullPointerException e){
+                        LOGGER.error(e.getMessage());
                     }
                 }
-            }
-            // InlineQuery variant
-            else if (updateC.hasInlineQuery()) {
-                try {
-                    inlineQueryParse(updateC);
-                } catch (TelegramApiException e) {
-                    throw new RuntimeException(e);
+                else if (lastUpdate.callbackQuery() != null){
+                    CallbackQuery query = lastUpdate.callbackQuery();
+                    LOGGER.trace("Callback query was found: {}", query);
+                    callbackQueryParse(query);
                 }
+                else if (lastUpdate.inlineQuery() != null) {
+                    InlineQuery query = lastUpdate.inlineQuery();
+                    LOGGER.trace("Inline query was found: {}", query);
+                    inlineQueryParse(query);
+                }
+                else {
+                    LOGGER.error("Unknown update: {}", lastUpdate);
+                }
+
+                return UpdatesListener.CONFIRMED_UPDATES_ALL;
             }
-            // Unknown variant
-            else {
-                LOGGER.error("Unknown update type, id: {}, message: {}", updateC.getUpdateId(), updateC.getMessage().getText());
+        }, e -> {
+            if (e.response() != null) {
+                // got bad response from telegram
+                e.response().errorCode();
+                e.response().description();
+            } else {
+                // probably network error
+                LOGGER.error(e.getMessage());
             }
         }
-
+        );
     }
 
-    // Override that method to provide bot token
-    @Override
-    public String getBotUsername() {
-        return null;
-    }
+    protected abstract void onStartCommand(Message message);
 
-    protected abstract void onStartCommand(Message message) throws TelegramApiException;
+    protected abstract void updateParse(Update update);
 
-    protected abstract void updateParse(Update update) throws TelegramApiException;
+    protected abstract void callbackQueryParse(CallbackQuery query);
 
-    protected abstract void callbackQueryParse(Update update) throws TelegramApiException;
+    protected abstract void entitiesParse(MessageEntity[] messageEntities);
 
-    protected abstract void messageParse(Update update) throws TelegramApiException;
+    protected abstract void messageParse(Message message);
 
-    protected abstract void inlineQueryParse(Update update) throws TelegramApiException;
+    protected abstract void inlineQueryParse(InlineQuery query);
 
 }
