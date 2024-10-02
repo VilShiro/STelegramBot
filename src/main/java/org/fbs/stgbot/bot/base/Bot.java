@@ -20,6 +20,7 @@ public abstract class Bot{
     private final TelegramBot bot;
 
     protected Bot(String botToken, String startCommandRaw){
+        init();
         StringBuilder stringBuilder = new StringBuilder();
         String startCommand = "";
         if (startCommandRaw.toCharArray()[0] == '/'){
@@ -46,7 +47,7 @@ public abstract class Bot{
                     if (message.entities().length > 0) {
                         MessageEntity[] entities = message.entities();
                         LOGGER.trace("Message has entities, parser was called");
-                        entitiesParse(entities);
+                        entitiesParse(entities, message);
                         if (message.text().contains(finalStartCommand)) {
                             LOGGER.trace("Message: {}", message.text());
                             onStartCommand(message);
@@ -95,13 +96,15 @@ public abstract class Bot{
         return bot;
     }
 
+    protected abstract void init();
+
     protected abstract void onStartCommand(Message message);
 
     protected abstract void updateParse(Update update);
 
     protected abstract void callbackQueryParse(CallbackQuery query);
 
-    protected abstract void entitiesParse(MessageEntity[] messageEntities);
+    protected abstract void entitiesParse(MessageEntity[] messageEntities, Message message);
 
     protected abstract void messageParse(Message message);
 
