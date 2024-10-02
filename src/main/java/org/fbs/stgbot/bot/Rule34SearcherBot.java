@@ -1,26 +1,38 @@
 package org.fbs.stgbot.bot;
 
-import com.pengrad.telegrambot.TelegramBot;
 import com.pengrad.telegrambot.model.*;
 import com.pengrad.telegrambot.model.request.InlineQueryResultArticle;
 import com.pengrad.telegrambot.model.request.InlineQueryResultPhoto;
 import com.pengrad.telegrambot.request.AnswerInlineQuery;
+import com.pengrad.telegrambot.request.SendDocument;
+import org.apache.commons.io.FileUtils;
 import org.fbs.stgbot.bot.base.Bot;
+import org.fbs.stgbot.data.ClientThread;
+import org.fbs.stgbot.data.ClientThreads;
 import org.jsoup.HttpStatusException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Objects;
 
 public class Rule34SearcherBot extends Bot {
 
-    private final ArrayList<Thread> parsingThreads = new ArrayList<>();
+    private final ArrayList<ClientThreads> parsingThreadsS = new ArrayList<>();
+
 
     public Rule34SearcherBot(String botToken, String startCommandRaw) {
         super(botToken, startCommandRaw);
+    }
+
+    @Override
+    protected void init() {
+
     }
 
     @Override
@@ -39,8 +51,20 @@ public class Rule34SearcherBot extends Bot {
     }
 
     @Override
-    protected void entitiesParse(MessageEntity[] messageEntities) {
-
+    protected void entitiesParse(MessageEntity[] messageEntities, Message message) {
+        if (message.text().equals("/sendLog")){
+            ClassLoader classloader = ClientThread.currentThread().getContextClassLoader();
+            InputStream is = classloader.getResourceAsStream("local/logs/logs.log");
+            assert is != null;
+            File doc = new File("logs.log");
+            try {
+                FileUtils.copyInputStreamToFile(is, doc);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            SendDocument document = new SendDocument(message.messageId(), doc);
+            getBot().execute(document);
+        }
     }
 
     @Override
@@ -51,18 +75,30 @@ public class Rule34SearcherBot extends Bot {
     @Override
     protected void inlineQueryParse(InlineQuery query) throws IOException {
 
-        for (int i = 0; i < parsingThreads.size(); i++) {
-            parsingThreads.remove(i);
+        ClientThreads clientThreads = null;
+        for (ClientThreads threads: parsingThreadsS){
+            if (threads.getUserId() == query.from().id()){
+                clientThreads = threads;
+            }
+        }
+        if (clientThreads == null){
+            clientThreads = new ClientThreads(query.from().id());
+            parsingThreadsS.add(clientThreads);
         }
 
-        parsingThreads.add(new Thread(() -> {
+        if (Objects.equals(clientThreads.getUserId(), query.from().id())) {
+            for (int i = 0; i < clientThreads.size(); i++) {
+                clientThreads.removeClientThread(i);
+            }
+        }
+
+        clientThreads.addClientThread(() -> {
             try {
-                getRequest(query, getBot());
+                getBot().execute(getRequest(query, query.id()));
             } catch (IOException e) {
                 LOGGER.error(e);
             }
-        }));
-        parsingThreads.get(parsingThreads.size() - 1).start();
+        });
 
     }
 
@@ -74,7 +110,7 @@ public class Rule34SearcherBot extends Bot {
         return new InlineQueryResultArticle(id, title, message);
     }
 
-    private void getRequest(InlineQuery query, TelegramBot bot) throws IOException {
+    private AnswerInlineQuery getRequest(InlineQuery query, String chatId) throws IOException {
         int pageStr = 0;
         String pageTag = "";
         int separatorIndex = query.query().indexOf("-");
@@ -131,10 +167,17 @@ public class Rule34SearcherBot extends Bot {
 
             LOGGER.trace("Send inline result: {}", photosArray);
             try {
-                bot.execute(new AnswerInlineQuery(query.id(), photos));
+                return  (new AnswerInlineQuery(query.id(), photos));
             }catch (RuntimeException e){
                 LOGGER.error(e);
             }
+        }
+        try {
+            return new AnswerInlineQuery(chatId, buildInlineArticle("0", "Tag not found", "Tag does not found"));
+        }
+        catch (RuntimeException e){
+            LOGGER.error(e);
+            return null;
         }
     }
 
