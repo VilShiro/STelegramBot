@@ -7,9 +7,7 @@ import com.pengrad.telegrambot.request.GetUpdates;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.IOException;
 import java.util.Objects;
-
 
 public abstract class Bot{
 
@@ -37,12 +35,20 @@ public abstract class Bot{
 
             Update lastUpdate = list.get(list.size()-1);
             LOGGER.trace("New update was found: {}", lastUpdate);
-            updateParse(lastUpdate);
+                    try {
+                        updateParse(lastUpdate);
+                    } catch (Exception e) {
+                        LOGGER.error(e);
+                    }
 
-            if (lastUpdate.message() != null && !Objects.equals(lastUpdate.message().text(), "")){
+                    if (lastUpdate.message() != null && !Objects.equals(lastUpdate.message().text(), "")){
                 Message message = lastUpdate.message();
                 LOGGER.trace("Message was found: {}", message);
-                messageParse(message);
+                try {
+                    messageParse(message);
+                } catch (Exception e) {
+                    LOGGER.error(e);
+                }
                 try {
                     if (message.entities().length > 0) {
                         MessageEntity[] entities = message.entities();
@@ -55,22 +61,26 @@ public abstract class Bot{
                         }
                     }
                 }
-                catch (NullPointerException e){
+                catch (Exception e){
                     LOGGER.error(e.getMessage());
                 }
             }
             else if (lastUpdate.callbackQuery() != null){
                 CallbackQuery query = lastUpdate.callbackQuery();
                 LOGGER.trace("Callback query was found: {}", query);
-                callbackQueryParse(query);
+                try {
+                    callbackQueryParse(query);
+                } catch (Exception e) {
+                    LOGGER.error(e);
+                }
             }
             else if (lastUpdate.inlineQuery() != null) {
                 InlineQuery query = lastUpdate.inlineQuery();
                 LOGGER.trace("Inline query was found: {}", query);
                 try {
                     inlineQueryParse(query);
-                } catch (IOException e) {
-                    LOGGER.error(e.getMessage());
+                } catch (Exception e) {
+                    LOGGER.error(e);
                 }
             }
             else {
@@ -98,16 +108,16 @@ public abstract class Bot{
 
     protected abstract void init();
 
-    protected abstract void onStartCommand(Message message);
+    protected abstract void onStartCommand(Message message) throws Exception;
 
-    protected abstract void updateParse(Update update);
+    protected abstract void updateParse(Update update) throws Exception;
 
-    protected abstract void callbackQueryParse(CallbackQuery query);
+    protected abstract void callbackQueryParse(CallbackQuery query) throws Exception;
 
-    protected abstract void entitiesParse(MessageEntity[] messageEntities, Message message);
+    protected abstract void entitiesParse(MessageEntity[] messageEntities, Message message) throws Exception;
 
-    protected abstract void messageParse(Message message);
+    protected abstract void messageParse(Message message) throws Exception;
 
-    protected abstract void inlineQueryParse(InlineQuery query) throws IOException;
+    protected abstract void inlineQueryParse(InlineQuery query) throws Exception;
 
 }
