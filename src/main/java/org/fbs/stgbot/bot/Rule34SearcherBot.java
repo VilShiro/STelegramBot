@@ -55,6 +55,10 @@ public class Rule34SearcherBot extends MultiClientBot {
     protected void inlineQueryParse(InlineQuery query, ArrayList<ClientThreads> threads) throws Exception {
         ClientThreads clientThreads = getThreadsByUserId(query.from().id(), threads);
 
+        if (clientThreads == null){
+            threads.add(new ClientThreads(query.from().id()));
+        }
+
         if (Objects.equals(clientThreads.getUserId(), query.from().id())) {
             for (int i = 0; i < clientThreads.size(); i++) {
                 clientThreads.removeClientThread(i);
