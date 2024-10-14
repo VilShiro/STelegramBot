@@ -16,26 +16,28 @@ public class R34SearchService {
     private R34SearchService(){}
 
     public static InlineQueryResultPhoto[] getParsed(String query, Logger LOGGER) throws IOException {
+        String query0 = cutSpaces(query);
         int pageStr = 0;
         String pageTag;
-        int separatorIndex = query.indexOf("-");
+        int separatorIndex = query0.indexOf("-");
         Document r34Link;
 
         if (separatorIndex != -1) {
             try {
-                pageStr = 42 * (Integer.parseInt(query.substring((separatorIndex + 1)).trim()) - 1);
+                pageStr = 42 * (Integer.parseInt(query0.substring((separatorIndex + 1)).trim()) - 1);
                 if (pageStr <= 0) {
                     pageStr = 0;
                 }
             } catch (NumberFormatException e) {
                 LOGGER.error(e);
             }
-            pageTag = query.substring(0, separatorIndex).trim();
+            pageTag = query0.substring(0, separatorIndex).trim();
         } else {
-            pageTag = query.trim();
+            pageTag = query0.trim();
         }
 
         if (!pageTag.isEmpty()) {
+            pageTag = pageTag.replace(' ', '+');
             LOGGER.trace("Search for rule34 images by tag: {}", pageTag);
             r34Link = Jsoup
                     .connect("https://rule34.xxx/index.php?page=post&s=list&tags=" + pageTag + "+&pid=" + pageStr)
@@ -82,6 +84,39 @@ public class R34SearchService {
 
     private static InlineQueryResultPhoto buildInlinePhoto(String id, String url) {
         return new InlineQueryResultPhoto(id, url, url);
+    }
+
+    private static String cutSpaces(String string){
+        char[] chars = string.toCharArray();
+        ArrayList<Character> charList = new ArrayList<>();
+        for (char c: chars){
+            charList.add(c);
+        }
+
+        int sStart = -1, sEnd = -1;
+
+        for (int i = 0; i < charList.size(); i++) {
+            if (charList.get(i) == ' '){
+                if (sStart == -1){
+                    sStart = i;
+                }
+                sEnd = i;
+            }
+            else {
+                if (sStart != -1) {
+                    for (int j = sStart; j < sEnd; j++) {
+                        charList.set(j, null);
+                    }
+                    sStart = -1;
+                    sEnd = -1;
+                }
+            }
+        }
+        StringBuilder sb = new StringBuilder();
+        for (Character c: charList){
+            if (c != null) sb.append(c);
+        }
+        return sb.toString();
     }
 
 }
