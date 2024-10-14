@@ -37,7 +37,10 @@ public class R34SearchService {
 
         if (!pageTag.isEmpty()) {
             LOGGER.trace("Search for rule34 images by tag: {}", pageTag);
-            r34Link = Jsoup.connect("https://rule34.xxx/index.php?page=post&s=list&tags=" + pageTag + "+&pid=" + pageStr).get();
+            r34Link = Jsoup
+                    .connect("https://rule34.xxx/index.php?page=post&s=list&tags=" + pageTag + "+&pid=" + pageStr)
+                    .userAgent("Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:101.0) Gecko/20100101 Firefox/101.0")
+                    .get();
 
             Elements r34LinkImagesBoard = r34Link.getElementsByClass("image-list");
             Elements r34RedirectLinks = Jsoup.parse(r34LinkImagesBoard.html()).getElementsByTag("a");
@@ -52,7 +55,11 @@ public class R34SearchService {
             for (String url : imgUrls) {
                 LOGGER.trace("Found image: {}", url);
                 try {
-                    Elements flexi = Jsoup.connect(url).get().getElementsByClass("flexi");
+                    Elements flexi = Jsoup
+                            .connect(url)
+                            .userAgent("Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:101.0) Gecko/20100101 Firefox/101.0")
+                            .get()
+                            .getElementsByClass("flexi");
                     Elements img = Jsoup.parse(flexi.html()).getElementsByTag("img");
                     if (!img.attr("src").isEmpty()) {
                         photosArray.add(buildInlinePhoto("photo" + i, img.attr("src")));
