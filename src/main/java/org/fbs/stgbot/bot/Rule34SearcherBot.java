@@ -104,7 +104,11 @@ public class Rule34SearcherBot extends MultiClientBot {
         }
 
         try {
-            return new AnswerInlineQuery(chatId, buildInlineArticle("0", "Tag not found", "Tag does not found"));
+            return new AnswerInlineQuery(
+                    chatId,
+                    buildInlineArticle("0", "Tag not found", "Tag does not found"))
+                    .isPersonal(true)
+                    .cacheTime(10);
         }
         catch (RuntimeException e){
             LOGGER.error(e);
