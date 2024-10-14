@@ -6,22 +6,15 @@ import com.pengrad.telegrambot.model.request.InlineQueryResultPhoto;
 import com.pengrad.telegrambot.request.AnswerInlineQuery;
 import com.pengrad.telegrambot.request.SendDocument;
 import org.apache.commons.io.FileUtils;
-import org.fbs.stgbot.bot.base.Bot;
 import org.fbs.stgbot.bot.base.MultiClientBot;
 import org.fbs.stgbot.data.ClientThread;
 import org.fbs.stgbot.data.ClientThreads;
 import org.fbs.stgbot.service.R34SearchService;
-import org.jsoup.HttpStatusException;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Objects;
 
 public class Rule34SearcherBot extends MultiClientBot {
 
@@ -54,13 +47,14 @@ public class Rule34SearcherBot extends MultiClientBot {
     @Override
     protected void inlineQueryParse(InlineQuery query, ArrayList<ClientThreads> threads) throws Exception {
         ClientThreads clientThreads = getThreadsByUserId(query.from().id(), threads);
-
-        if (clientThreads == null){
+        if (clientThreads == null) {
             threads.add(new ClientThreads(query.from().id()));
+            clientThreads = getThreadsByUserId(query.from().id(), threads);
         }
 
-        if (Objects.equals(clientThreads.getUserId(), query.from().id())) {
+        if (clientThreads.getUserId() == query.from().id()) {
             for (int i = 0; i < clientThreads.size(); i++) {
+                LOGGER.trace("Thread {}, was removed", clientThreads.get(i));
                 clientThreads.removeClientThread(i);
             }
         }
