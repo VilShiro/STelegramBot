@@ -7,11 +7,11 @@ This Telegram bot is developed in Java using the `java-telegram-bot-api` library
 1. **Install Java 17+:** Download and install the latest version of Java from the official website: [https://www.java.com/en/download/](https://www.java.com/en/download/)
 2. **Download the bot JAR file:**
    ```bash
-   wget https://github.com/Vitaliylevchuk/STelegramBot/releases/latest/download/STelegramBot.jar
+   wget https://github.com/VilShiro/STelegramBot/releases/latest/download/stb.jar
    ```
 3. **Run the bot:**
    ```bash
-   java -jar STelegramBot.jar
+   java -jar stb.jar
    ```
 
 **Debugging:**
