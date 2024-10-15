@@ -1,4 +1,4 @@
-# Telegram Bot in Java
+# Some Telegram Bot in Java
 
 **Description:**
 This Telegram bot is developed in Java using the `java-telegram-bot-api` library. It is designed to [describe the main functionality of the bot here].
